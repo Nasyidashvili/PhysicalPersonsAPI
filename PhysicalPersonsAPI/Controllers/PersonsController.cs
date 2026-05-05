@@ -5,6 +5,7 @@ using PhysicalPersonsAPI.Models;
 using PhysicalPersonsAPI.DTOS;
 using PhysicalPersonsAPI.Interfaces;
 using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 
 namespace PhysicalPersonsAPI.Controllers
@@ -49,6 +50,12 @@ namespace PhysicalPersonsAPI.Controllers
             }
 
             return CreatedAtAction(nameof(GetPhysicalPerson), new { id = createdPerson.Id }, createdPerson);
+        }
+        [HttpPost("{id}/upload-image")]
+        public async Task<ActionResult> UploadImage(int id, IFormFile image)
+        {
+            var result = await _physicalPersonService.UploadImageAsync(id, image);
+            return Ok(result);
         }
 
         [HttpPut("{id}")]

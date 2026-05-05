@@ -10,10 +10,11 @@ namespace PhysicalPersonsAPI.Services
     public class PhysicalPersonService : IPhysicalPersonService
     {
         private readonly AppDbContext _context;
-
-        public PhysicalPersonService(AppDbContext context)
+        private readonly IWebHostEnvironment _environment;
+        public PhysicalPersonService(AppDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         public async Task<IEnumerable<PhysicalPersonResponseDto>> GetAllAsync()
@@ -160,6 +161,28 @@ namespace PhysicalPersonsAPI.Services
                 PageNumber = searchDto.PageNumber,
                 PageSize = searchDto.PageSize
             };
+        }
+        public async Task<string> UploadImageAsync(int id, IFormFile image)
+        {
+            var person = _context.PhysicalPersons.Find(id);
+            if(person == null)
+            {
+                throw new Exception("Person not found");
+            }
+
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(image.FileName)}";
+            var filePath = Path.Combine(_environment.WebRootPath, "images", fileName);
+
+            using(var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            person.ImagePath = $"/images/{fileName}";
+
+            await _context.SaveChangesAsync();
+
+            return person.ImagePath;
         }
     }
 }

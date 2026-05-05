@@ -10,5 +10,6 @@ namespace PhysicalPersonsAPI.Interfaces
         public Task<PhysicalPersonResponseDto?> UpdateAsync(int id, UpdatePhysicalPersonDto updatePersonDto);
         public Task<bool> DeleteAsync(int id);
         public Task<ResultDto<PhysicalPersonResponseDto>> SearchAsync(SearchDto searchDto);
+        public Task<string> UploadImageAsync(int id, IFormFile image);
     }
 }
