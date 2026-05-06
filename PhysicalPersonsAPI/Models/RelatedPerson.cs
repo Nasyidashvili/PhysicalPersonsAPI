@@ -14,6 +14,6 @@
         public RelationType Related { get; set; }
         public int RelativePersonId { get; set; }
 
-
+        public PhysicalPerson? RelativePerson { get; set; }
     }
 }

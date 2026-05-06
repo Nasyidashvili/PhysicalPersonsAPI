@@ -1,4 +1,5 @@
 ﻿using PhysicalPersonsAPI.DTOS;
+using PhysicalPersonsAPI.Models;
 
 namespace PhysicalPersonsAPI.Interfaces
 {
@@ -11,5 +12,8 @@ namespace PhysicalPersonsAPI.Interfaces
         public Task<bool> DeleteAsync(int id);
         public Task<ResultDto<PhysicalPersonResponseDto>> SearchAsync(SearchDto searchDto);
         public Task<string> UploadImageAsync(int id, IFormFile image);
+        public Task<RelatedPersonResponseDto?> AddRelatedPerson(int personId, int relatedId, RelationType type);
+        public Task<bool> RemoveRelatedPerson(int personId, int relatedId);
+        public Task<IEnumerable<RelatedPersonResponseDto>> GetRelatedPerson(int personId);
     }
 }

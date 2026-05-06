@@ -85,6 +85,33 @@ namespace PhysicalPersonsAPI.Controllers
             var result = await _physicalPersonService.SearchAsync(searchDto);
             return Ok(result);
         }
+        [HttpPost("{personId}/related")]
+        public async Task<ActionResult> AddRelatedPerson(int personId,[FromBody] AddRelatedPersonDto dto)
+        {
+            var result = await _physicalPersonService.AddRelatedPerson(personId, dto.RelatedId, dto.Type);
+            if (result == null)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+        [HttpDelete("{personId}/related/{relatedId}")]
+        public async Task<ActionResult> RemoveRelatedPerson(int personId, int relatedId)
+        {
+            var result = await _physicalPersonService.RemoveRelatedPerson(personId, relatedId);
+            if (!result)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
+        [HttpGet("{personId}/related")]
+        public async Task<ActionResult<IEnumerable<RelatedPersonResponseDto>>> GetRelatedPersons(int personId)
+        {
+            var relatedPersons = await _physicalPersonService.GetRelatedPerson(personId);
+            return Ok(relatedPersons);
+        }
+
     }
 }
 

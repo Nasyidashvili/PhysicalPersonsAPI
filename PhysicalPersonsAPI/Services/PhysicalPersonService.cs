@@ -184,5 +184,60 @@ namespace PhysicalPersonsAPI.Services
 
             return person.ImagePath;
         }
+
+        public async Task<RelatedPersonResponseDto?> AddRelatedPerson(int personId, int relatedId, RelationType type)
+        {
+            var person = await _context.PhysicalPersons.FindAsync(personId);
+            var relatedPerson = await _context.PhysicalPersons.FindAsync(relatedId);
+            if (person == null || relatedPerson == null) {
+                throw new Exception("Person not found");
+            }
+            var relation = new RelatedPerson
+            {
+                PhysicalPersonId = personId,
+                RelativePersonId = relatedId,
+                Related = type
+            };
+
+            _context.RelatedPersons.Add(relation);
+            await _context.SaveChangesAsync();
+
+            return new RelatedPersonResponseDto
+            {
+                Id = relation.Id,
+                FirstName = relatedPerson.FirstName,
+                LastName = relatedPerson.LastName,
+                BirthDate = relatedPerson.BirthDate,
+                Type = type
+            };
+        }
+        public async Task<bool> RemoveRelatedPerson(int personId, int relatedId)
+        {
+            var relation = await _context.RelatedPersons.FirstOrDefaultAsync(r => r.PhysicalPersonId == personId && r.RelativePersonId == relatedId);
+            if (relation == null)
+            {
+                return false;
+            }
+            
+            _context.RelatedPersons.Remove(relation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<IEnumerable<RelatedPersonResponseDto>> GetRelatedPerson(int personId)
+        {
+            var relations = await _context.RelatedPersons
+                .Include(p => p.RelativePerson)
+                .Where(p => p.PhysicalPersonId == personId)
+                .Select(p => new RelatedPersonResponseDto
+                {
+                    Id = p.Id,
+                    FirstName = p.RelativePerson.FirstName,
+                    LastName = p.RelativePerson.LastName,
+                    BirthDate = p.RelativePerson.BirthDate,
+                    Type = p.Related
+                })
+                .ToListAsync();
+            return relations;
+        }
     }
 }
