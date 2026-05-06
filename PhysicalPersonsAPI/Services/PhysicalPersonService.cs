@@ -40,7 +40,8 @@ namespace PhysicalPersonsAPI.Services
         {
             var physicalPerson = await _context.PhysicalPersons
                 .Include(p => p.City)
-                .FirstOrDefaultAsync();
+                .Include(p => p.PhoneNumbers)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
             if (physicalPerson == null)
             {
@@ -55,7 +56,12 @@ namespace PhysicalPersonsAPI.Services
                 PersonalNumber = physicalPerson.PersonalNumber,
                 Gender = physicalPerson.Gender,
                 BirthDate = physicalPerson.BirthDate,
-                CityName = physicalPerson.City.CityName
+                CityName = physicalPerson.City.CityName,
+                PhoneNumbers = physicalPerson.PhoneNumbers?.Select(p => new PhoneNumberResponseDto
+                {
+                    Number = p.Number,
+                    PhoneType = p.NumberType
+                }).ToList() ?? new()
             };
             return responseDto;
         }
@@ -74,14 +80,24 @@ namespace PhysicalPersonsAPI.Services
 
             _context.PhysicalPersons.Add(physicalPerson);
             await _context.SaveChangesAsync();
-            
+
+            foreach (var phoneDto in createPersonDto.PhoneNumbers)
+                _context.PhoneNumbers.Add(new PhoneNumber
+                {
+                    Number = phoneDto.Number,
+                    NumberType = phoneDto.PhoneType,
+                    PhysicalPersonId = physicalPerson.Id
+                });
+
+            await _context.SaveChangesAsync();
+
             return await GetByIdAsync(physicalPerson.Id);
         }
 
         public async Task<PhysicalPersonResponseDto?> UpdateAsync(int id, UpdatePhysicalPersonDto updatePersonDto)
         {
             var physicalPersons = await _context.PhysicalPersons.FindAsync(id);
-            
+
             if (physicalPersons == null)
             {
                 return null;
@@ -93,6 +109,19 @@ namespace PhysicalPersonsAPI.Services
             physicalPersons.Gender = updatePersonDto.Gender;
             physicalPersons.BirthDate = updatePersonDto.BirthDate;
             physicalPersons.CityId = updatePersonDto.CityId;
+
+            var existingPhones = _context.PhoneNumbers.Where(p => p.PhysicalPersonId == id);
+            _context.PhoneNumbers.RemoveRange(existingPhones);
+
+            foreach(var phone in updatePersonDto.PhoneNumbers)
+            {
+                _context.PhoneNumbers.Add(new PhoneNumber
+                {
+                    Number = phone.Number,
+                    NumberType = phone.PhoneType,
+                    PhysicalPersonId = id
+                });
+            }
 
             await _context.SaveChangesAsync();
 

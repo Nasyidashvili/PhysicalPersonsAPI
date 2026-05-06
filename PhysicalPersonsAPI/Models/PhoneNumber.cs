@@ -3,9 +3,9 @@
 namespace PhysicalPersonsAPI.Models
 {
     public enum PhoneType{
-        PersonalNumber,
-        WorkNumber,
-        HomeNumber
+        Mobile,
+        Work,
+        Home
     }
     public class PhoneNumber
     {

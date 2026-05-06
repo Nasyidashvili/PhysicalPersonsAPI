@@ -19,5 +19,6 @@ namespace PhysicalPersonsAPI.Models
         public int CityId { get; set; }
         public City? City { get; set; }
         public ICollection<RelatedPerson>? RelatedPersons { get; set; } = new List<RelatedPerson>();
+        public ICollection<PhoneNumber>? PhoneNumbers { get; set; } = new List<PhoneNumber>();
     }
 }

@@ -30,5 +30,7 @@ namespace PhysicalPersonsAPI.DTOS
         [Required(ErrorMessage = "City ID is required.")]
         public int CityId { get; set; }
 
+        public List<CreatePhoneNumberDto> PhoneNumbers { get; set; } = new();
+
     }
 }
