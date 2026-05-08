@@ -147,7 +147,9 @@ namespace PhysicalPersonsAPI.Services
         }
         public async Task<ResultDto<PhysicalPersonResponseDto>> SearchAsync(SearchDto searchDto)
         {
-            IQueryable<PhysicalPerson> query = _context.PhysicalPersons.Include(p => p.City);
+            IQueryable<PhysicalPerson> query = _context.PhysicalPersons
+                .Include(p => p.City)
+                .Include(p => p.PhoneNumbers);
             if (!string.IsNullOrEmpty(searchDto.FirstName))
             {
                 query = query.Where(p => p.FirstName.ToLower().Contains(searchDto.FirstName.ToLower()));
@@ -187,7 +189,12 @@ namespace PhysicalPersonsAPI.Services
                     PersonalNumber = p.PersonalNumber,
                     Gender = p.Gender,
                     BirthDate = p.BirthDate,
-                    CityName = p.City.CityName
+                    CityName = p.City.CityName,
+                    PhoneNumbers = p.PhoneNumbers?.Select(r => new PhoneNumberResponseDto
+                    {
+                        Number = r.Number,
+                        PhoneType = r.NumberType
+                    }).ToList() ?? new()
                 }),
                 TotalCount = totalCount,
                 PageNumber = searchDto.PageNumber,
