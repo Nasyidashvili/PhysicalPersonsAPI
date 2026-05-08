@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using PhysicalPersonsAPI.Data;
 using PhysicalPersonsAPI.Interfaces;
+using PhysicalPersonsAPI.Repositories.Interfaces;
 using PhysicalPersonsAPI.Services;
+using PhysicalPersonsAPI.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,8 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IPhysicalPersonService, PhysicalPersonService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

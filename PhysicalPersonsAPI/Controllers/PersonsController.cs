@@ -6,6 +6,7 @@ using PhysicalPersonsAPI.DTOS;
 using PhysicalPersonsAPI.Interfaces;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using PhysicalPersonsAPI.Repositories.Interfaces;
 
 
 namespace PhysicalPersonsAPI.Controllers

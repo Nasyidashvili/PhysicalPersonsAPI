@@ -4,23 +4,26 @@ using PhysicalPersonsAPI.Models;
 using PhysicalPersonsAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.InteropServices;
+using PhysicalPersonsAPI.Repositories.Interfaces;
 
 namespace PhysicalPersonsAPI.Services
 {
     public class PhysicalPersonService : IPhysicalPersonService
     {
+        private readonly IUnitOfWork _unitOfWork;
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        public PhysicalPersonService(AppDbContext context, IWebHostEnvironment environment)
+        public PhysicalPersonService(AppDbContext context,IUnitOfWork unitOfWork, IWebHostEnvironment environment)
         {
             _context = context;
+            _unitOfWork = unitOfWork;
             _environment = environment;
         }
 
         public async Task<IEnumerable<PhysicalPersonResponseDto>> GetAllAsync()
         {
-            var physicalPersons = await _context.PhysicalPersons
-                .Include(p => p.City)
+            var physicalPersons = await _unitOfWork.Persons.GetAllWithCityAsync();
+            return physicalPersons
                 .Select(p => new PhysicalPersonResponseDto
                 {
                     Id = p.Id,
@@ -29,19 +32,18 @@ namespace PhysicalPersonsAPI.Services
                     PersonalNumber = p.PersonalNumber,
                     Gender = p.Gender,
                     BirthDate = p.BirthDate,
-                    CityName = p.City.CityName
-                })
-                .ToListAsync();
-
-            return physicalPersons;
+                    CityName = p.City.CityName,
+                    PhoneNumbers = p.PhoneNumbers?.Select(r => new PhoneNumberResponseDto
+                    {
+                        Number = r.Number,
+                        PhoneType = r.NumberType
+                    }).ToList() ?? new()
+                });
         }
 
         public async Task<PhysicalPersonResponseDto?> GetByIdAsync(int id)
         {
-            var physicalPerson = await _context.PhysicalPersons
-                .Include(p => p.City)
-                .Include(p => p.PhoneNumbers)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var physicalPerson = await _unitOfWork.Persons.GetByIdDetailsAsync(id);
 
             if (physicalPerson == null)
             {
@@ -78,8 +80,8 @@ namespace PhysicalPersonsAPI.Services
                 CityId = createPersonDto.CityId
             };
 
-            _context.PhysicalPersons.Add(physicalPerson);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Persons.AddAsync(physicalPerson);
+            await _unitOfWork.SaveAsync();
 
             foreach (var phoneDto in createPersonDto.PhoneNumbers)
                 _context.PhoneNumbers.Add(new PhoneNumber
@@ -89,14 +91,14 @@ namespace PhysicalPersonsAPI.Services
                     PhysicalPersonId = physicalPerson.Id
                 });
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveAsync();
 
             return await GetByIdAsync(physicalPerson.Id);
         }
 
         public async Task<PhysicalPersonResponseDto?> UpdateAsync(int id, UpdatePhysicalPersonDto updatePersonDto)
         {
-            var physicalPersons = await _context.PhysicalPersons.FindAsync(id);
+            var physicalPersons = await _unitOfWork.Persons.GetByIdAsync(id);
 
             if (physicalPersons == null)
             {
@@ -123,22 +125,23 @@ namespace PhysicalPersonsAPI.Services
                 });
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Persons.UpdateAsync(physicalPersons);
+            await _unitOfWork.SaveAsync();
 
             return await GetByIdAsync(physicalPersons.Id);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var physicalPersons = await _context.PhysicalPersons.FindAsync(id);
+            var physicalPersons = await _unitOfWork.Persons.GetByIdAsync(id);
 
             if ( physicalPersons == null)
             {
                 return false;
             }
 
-            _context.PhysicalPersons.Remove(physicalPersons);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Persons.DeleteAsync(id);
+            await _unitOfWork.SaveAsync();
 
             return true;
         }
