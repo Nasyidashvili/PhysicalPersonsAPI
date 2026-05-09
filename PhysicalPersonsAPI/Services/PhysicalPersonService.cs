@@ -278,5 +278,21 @@ namespace PhysicalPersonsAPI.Services
                 .ToListAsync();
             return relations;
         }
+
+        public async Task<ReportDto> GenerateReportAsync()
+        {
+            var totalPersons = await _unitOfWork.Persons.GetAllAsync();
+            var totalCount = totalPersons.Count();
+            var byGender = await _context.PhysicalPersons
+                .GroupBy(p => p.Gender)
+                .Select(p => new { Key = p.Key.ToString(), Count = p.Count() })
+                .ToListAsync();
+            return new ReportDto
+            {
+                TotalPersons = totalCount,
+                ByGender = byGender.ToDictionary(g => g.Key, g => g.Count),
+                RelatedPersons = await _context.RelatedPersons.CountAsync()
+            };
+        }
     }
 }

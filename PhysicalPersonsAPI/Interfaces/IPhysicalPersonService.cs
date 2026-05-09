@@ -15,5 +15,7 @@ namespace PhysicalPersonsAPI.Interfaces
         public Task<RelatedPersonResponseDto?> AddRelatedPerson(int personId, int relatedId, RelationType type);
         public Task<bool> RemoveRelatedPerson(int personId, int relatedId);
         public Task<IEnumerable<RelatedPersonResponseDto>> GetRelatedPerson(int personId);
+
+        public Task<ReportDto> GenerateReportAsync();
     }
 }

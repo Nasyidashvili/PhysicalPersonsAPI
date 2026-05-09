@@ -11,7 +11,8 @@ namespace PhysicalPersonsAPI.Validation
             {
                 return true;
             }
-            if (value is DateTime birthDate) {
+            if (value is DateTime birthDate)
+            {
                 var today = DateTime.Today;
                 var age = today.Year - birthDate.Year;
                 return age >= 18;

@@ -1,15 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using PhysicalPersonsAPI.Data;
+using PhysicalPersonsAPI.Filters;
 using PhysicalPersonsAPI.Interfaces;
+using PhysicalPersonsAPI.Repositories.Implementations;
 using PhysicalPersonsAPI.Repositories.Interfaces;
 using PhysicalPersonsAPI.Services;
-using PhysicalPersonsAPI.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelAttribute>();
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet    /openapi
 builder.Services.AddOpenApi();
 
@@ -21,6 +25,8 @@ builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddLocalization();
+
 
 var app = builder.Build();
 
@@ -36,6 +42,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseAuthorization();
+app.UseMiddleware<PhysicalPersonsAPI.Middleware.ErrorHandlingMiddleware>();
+app.UseMiddleware<PhysicalPersonsAPI.Middleware.LanguageMiddleware>();
 
 app.MapControllers();
 

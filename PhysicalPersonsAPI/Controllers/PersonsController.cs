@@ -112,7 +112,12 @@ namespace PhysicalPersonsAPI.Controllers
             var relatedPersons = await _physicalPersonService.GetRelatedPerson(personId);
             return Ok(relatedPersons);
         }
-
+        [HttpGet("report")]
+        public async Task<IActionResult> GetReport()
+        {
+            var report = await _physicalPersonService.GenerateReportAsync();
+            return Ok(report);
+        }
     }
 }
 
