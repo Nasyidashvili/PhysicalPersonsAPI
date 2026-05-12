@@ -1,21 +1,20 @@
-﻿using PhysicalPersonsAPI.DTOS;
+﻿using Microsoft.EntityFrameworkCore;
+using PhysicalPersonsAPI.Data;
+using PhysicalPersonsAPI.DTOS;
 using PhysicalPersonsAPI.Interfaces;
 using PhysicalPersonsAPI.Models;
-using PhysicalPersonsAPI.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Runtime.InteropServices;
+using PhysicalPersonsAPI.Repositories.Implementations;
 using PhysicalPersonsAPI.Repositories.Interfaces;
+using System.Runtime.InteropServices;
 
 namespace PhysicalPersonsAPI.Services
 {
     public class PhysicalPersonService : IPhysicalPersonService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        public PhysicalPersonService(AppDbContext context,IUnitOfWork unitOfWork, IWebHostEnvironment environment)
+        public PhysicalPersonService(IUnitOfWork unitOfWork, IWebHostEnvironment environment)
         {
-            _context = context;
             _unitOfWork = unitOfWork;
             _environment = environment;
         }
@@ -84,7 +83,7 @@ namespace PhysicalPersonsAPI.Services
             await _unitOfWork.SaveAsync();
 
             foreach (var phoneDto in createPersonDto.PhoneNumbers)
-                _context.PhoneNumbers.Add(new PhoneNumber
+               await _unitOfWork.PhoneNumbers.AddAsync(new PhoneNumber
                 {
                     Number = phoneDto.Number,
                     NumberType = phoneDto.PhoneType,
@@ -112,12 +111,12 @@ namespace PhysicalPersonsAPI.Services
             physicalPersons.BirthDate = updatePersonDto.BirthDate;
             physicalPersons.CityId = updatePersonDto.CityId;
 
-            var existingPhones = _context.PhoneNumbers.Where(p => p.PhysicalPersonId == id);
-            _context.PhoneNumbers.RemoveRange(existingPhones);
+            var existingPhones = await _unitOfWork.PhoneNumbers.GetIdAsync(physicalPersons.Id);
+            _unitOfWork.PhoneNumbers.RemoveRange(existingPhones);
 
-            foreach(var phone in updatePersonDto.PhoneNumbers)
+            foreach (var phone in updatePersonDto.PhoneNumbers)
             {
-                _context.PhoneNumbers.Add(new PhoneNumber
+                await _unitOfWork.PhoneNumbers.AddAsync(new PhoneNumber
                 {
                     Number = phone.Number,
                     NumberType = phone.PhoneType,
@@ -147,37 +146,7 @@ namespace PhysicalPersonsAPI.Services
         }
         public async Task<ResultDto<PhysicalPersonResponseDto>> SearchAsync(SearchDto searchDto)
         {
-            IQueryable<PhysicalPerson> query = _context.PhysicalPersons
-                .Include(p => p.City)
-                .Include(p => p.PhoneNumbers);
-            if (!string.IsNullOrEmpty(searchDto.FirstName))
-            {
-                query = query.Where(p => p.FirstName.ToLower().Contains(searchDto.FirstName.ToLower()));
-            }
-            if (!string.IsNullOrEmpty(searchDto.LastName))
-            {
-                query = query.Where(p => p.LastName.ToLower().Contains(searchDto.LastName.ToLower()));
-            }
-            if (!string.IsNullOrEmpty(searchDto.PersonalNumber)) 
-            {
-                query = query.Where(p => p.PersonalNumber.Contains(searchDto.PersonalNumber));
-            }
-            if (searchDto.Gender != null)
-            {
-                query = query.Where(p => p.Gender == searchDto.Gender);
-            }
-            if (searchDto.CityId != null)
-            {
-                query = query.Where(p => p.CityId == searchDto.CityId);
-            }
-
-            int totalCount = await query.CountAsync();
-
-            query = query
-                .Skip((searchDto.PageNumber - 1) * searchDto.PageSize)
-                .Take(searchDto.PageSize);
-
-            var items = await query.ToListAsync();
+           var (items, totalCount) = await _unitOfWork.Persons.SearchAsync(searchDto);
 
             return new ResultDto<PhysicalPersonResponseDto>
             {
@@ -203,7 +172,7 @@ namespace PhysicalPersonsAPI.Services
         }
         public async Task<string> UploadImageAsync(int id, IFormFile image)
         {
-            var person = _context.PhysicalPersons.Find(id);
+            var person = await _unitOfWork.Persons.FindIdAsync(id);
             if(person == null)
             {
                 throw new Exception("Person not found");
@@ -219,15 +188,15 @@ namespace PhysicalPersonsAPI.Services
 
             person.ImagePath = $"/images/{fileName}";
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveAsync();
 
             return person.ImagePath;
         }
 
         public async Task<RelatedPersonResponseDto?> AddRelatedPerson(int personId, int relatedId, RelationType type)
         {
-            var person = await _context.PhysicalPersons.FindAsync(personId);
-            var relatedPerson = await _context.PhysicalPersons.FindAsync(relatedId);
+            var person = await _unitOfWork.Persons.FindIdAsync(personId);
+            var relatedPerson = await _unitOfWork.Persons.FindIdAsync(relatedId);
             if (person == null || relatedPerson == null) {
                 throw new Exception("Person not found");
             }
@@ -238,8 +207,8 @@ namespace PhysicalPersonsAPI.Services
                 Related = type
             };
 
-            _context.RelatedPersons.Add(relation);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.RelatedPersons.AddAsync(relation);
+            await _unitOfWork.SaveAsync();
 
             return new RelatedPersonResponseDto
             {
@@ -252,46 +221,41 @@ namespace PhysicalPersonsAPI.Services
         }
         public async Task<bool> RemoveRelatedPerson(int personId, int relatedId)
         {
-            var relation = await _context.RelatedPersons.FirstOrDefaultAsync(r => r.PhysicalPersonId == personId && r.RelativePersonId == relatedId);
+            var relation = await _unitOfWork.RelatedPersons.GetBothIdAsync(personId, relatedId);
             if (relation == null)
             {
                 return false;
             }
-            
-            _context.RelatedPersons.Remove(relation);
-            await _context.SaveChangesAsync();
+
+            _unitOfWork.RelatedPersons.Remove(relation);
+            await _unitOfWork.SaveAsync();
             return true;
         }
         public async Task<IEnumerable<RelatedPersonResponseDto>> GetRelatedPerson(int personId)
         {
-            var relations = await _context.RelatedPersons
-                .Include(p => p.RelativePerson)
-                .Where(p => p.PhysicalPersonId == personId)
-                .Select(p => new RelatedPersonResponseDto
-                {
-                    Id = p.Id,
-                    FirstName = p.RelativePerson.FirstName,
-                    LastName = p.RelativePerson.LastName,
-                    BirthDate = p.RelativePerson.BirthDate,
-                    Type = p.Related
-                })
-                .ToListAsync();
-            return relations;
+            var relations = await _unitOfWork.RelatedPersons.GetByPersonIdAsync(personId);
+
+            return relations.Select(p => new RelatedPersonResponseDto
+            {
+                Id = p.Id,
+                FirstName = p.RelativePerson.FirstName,
+                LastName = p.RelativePerson.LastName,
+                BirthDate = p.RelativePerson.BirthDate,
+                Type = p.Related
+            })
+            ;
         }
 
         public async Task<ReportDto> GenerateReportAsync()
         {
             var totalPersons = await _unitOfWork.Persons.GetAllAsync();
             var totalCount = totalPersons.Count();
-            var byGender = await _context.PhysicalPersons
-                .GroupBy(p => p.Gender)
-                .Select(p => new { Key = p.Key.ToString(), Count = p.Count() })
-                .ToListAsync();
+            var byGender = await _unitOfWork.Persons.CountByGennderAsync();
             return new ReportDto
             {
                 TotalPersons = totalCount,
-                ByGender = byGender.ToDictionary(g => g.Key, g => g.Count),
-                RelatedPersons = await _context.RelatedPersons.CountAsync()
+                ByGender = byGender,
+                RelatedPersons = await _unitOfWork.RelatedPersons.CountAsync()
             };
         }
     }
