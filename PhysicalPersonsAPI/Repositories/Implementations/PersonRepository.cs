@@ -56,7 +56,7 @@ namespace PhysicalPersonsAPI.Repositories.Implementations
                 .FirstOrDefaultAsync(p => p.Id.Equals(id));
         }
 
-        public async Task<IEnumerable<PhysicalPerson>> GetAllWithCityAsync()
+        public async Task<IEnumerable<PhysicalPerson>> GetAllCityAsync()
         {
             return await _dbSet
                 .Include(p => p.City)

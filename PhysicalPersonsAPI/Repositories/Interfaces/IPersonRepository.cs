@@ -7,7 +7,7 @@ namespace PhysicalPersonsAPI.Repositories.Interfaces
     {
         Task<(IEnumerable<PhysicalPerson> Items, int TotalCount)> SearchAsync(SearchDto dto);
         Task<PhysicalPerson?> GetWithRelatedAsync(int id);
-        Task<IEnumerable<PhysicalPerson>> GetAllWithCityAsync();
+        Task<IEnumerable<PhysicalPerson>> GetAllCityAsync();
         Task<PhysicalPerson?> GetByIdDetailsAsync(int id);
         Task<PhysicalPerson?> FindIdAsync(int id);
         Task<Dictionary<string, int>> CountByGennderAsync();
