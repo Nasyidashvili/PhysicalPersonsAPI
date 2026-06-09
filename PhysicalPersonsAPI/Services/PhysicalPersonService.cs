@@ -21,7 +21,7 @@ namespace PhysicalPersonsAPI.Services
 
         public async Task<IEnumerable<PhysicalPersonResponseDto>> GetAllAsync()
         {
-            var physicalPersons = await _unitOfWork.Persons.GetAllWithCityAsync();
+            var physicalPersons = await _unitOfWork.Persons.GetAllCityAsync();
             return physicalPersons
                 .Select(p => new PhysicalPersonResponseDto
                 {

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PhysicalPersonsAPI.Data;
 
@@ -11,9 +12,11 @@ using PhysicalPersonsAPI.Data;
 namespace PhysicalPersonsAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609223025_FinalMigration")]
+    partial class FinalMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,23 +39,6 @@ namespace PhysicalPersonsAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Cities");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CityName = "Tbilisi"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CityName = "Batumi"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CityName = "Kutaisi"
-                        });
                 });
 
             modelBuilder.Entity("PhysicalPersonsAPI.Models.PhoneNumber", b =>

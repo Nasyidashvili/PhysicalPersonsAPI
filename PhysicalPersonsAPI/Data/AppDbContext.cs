@@ -23,6 +23,11 @@ namespace PhysicalPersonsAPI.Data
                     .HasForeignKey(x => x.RelativePersonId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+            modelBuilder.Entity<City>().HasData(
+                new City { Id = 1, CityName = "Tbilisi" },
+                new City { Id = 2, CityName = "Batumi" },
+                new City { Id = 3, CityName = "Kutaisi" }
+                );
         }
 
         public DbSet<City> Cities { get; set;  }
